@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.tsbuildinfo",
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedSideEffectImports": true,
+
+    "paths": {
+      "@/routes/*": ["./src/routes/*"],
+      "@/pages/*": ["./src/pages/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/i18n/*": ["./src/utils/i18n/*"],
+      "@/styles/*": ["./src/styles/*"],
+      "@/icons/*": ["./src/assets/icons/*"],
+      "@/icons": ["./src/assets/icons"],
+      "@/assets/*": ["./src/assets/*"]
+    }
+  },
+  "include": ["src", "src/custom.d.ts", "vite.config.ts"],
+  "exclude": ["node_modules"]
+}
