@@ -1,14 +1,12 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Heading, Flex } from "@radix-ui/themes";
 import Game from "@/components/Game";
 
 const GamePage = () => {
   const { t } = useTranslation();
-  const [isGameReady, setIsGameReady] = useState(false);
 
   const handleGameReady = () => {
-    setIsGameReady(true);
+    // Game ready callback
   };
 
   return (

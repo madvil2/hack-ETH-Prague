@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   Heading,
@@ -15,8 +14,6 @@ import {
 import paths from "@/routes/paths";
 
 const MainPage = () => {
-  const { t } = useTranslation();
-
   return (
     <Box
       style={{
