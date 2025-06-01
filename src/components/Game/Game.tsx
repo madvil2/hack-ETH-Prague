@@ -137,7 +137,20 @@ const Game: React.FC<GameProps> = ({ onGameReady }) => {
       const originalHandleExit = (nextScene as any).handleExit;
       (nextScene as any).handleExit = function (exitX: number, exitY: number) {
         console.log(`Player reached exit at coordinates: (${exitX}, ${exitY})`);
-        switchToNextMap();
+        // Call original handleExit to show victory screen
+        originalHandleExit.call(this, exitX, exitY);
+
+        // Override the repeat and menu handlers to use our navigation
+        const originalRepeatHandler = this.repeatHandler;
+        const originalMenuHandler = this.menuHandler;
+
+        this.repeatHandler = () => {
+          this.scene.restart();
+        };
+
+        this.menuHandler = () => {
+          window.location.href = "/";
+        };
       };
     }
 
@@ -165,7 +178,20 @@ const Game: React.FC<GameProps> = ({ onGameReady }) => {
             console.log(
               `Player reached exit at coordinates: (${exitX}, ${exitY})`
             );
-            switchToNextMap();
+            // Call original handleExit to show victory screen
+            originalHandleExit.call(this, exitX, exitY);
+
+            // Override the repeat and menu handlers to use our navigation
+            const originalRepeatHandler = this.repeatHandler;
+            const originalMenuHandler = this.menuHandler;
+
+            this.repeatHandler = () => {
+              this.scene.restart();
+            };
+
+            this.menuHandler = () => {
+              window.location.href = "/";
+            };
           };
           if (onGameReady) {
             onGameReady();

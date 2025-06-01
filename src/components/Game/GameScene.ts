@@ -611,44 +611,135 @@ export class GameScene extends Phaser.Scene {
     };
   }
 
+  // Default handlers that can be overridden
+  public repeatHandler() {
+    this.scene.restart();
+  }
+
+  public menuHandler() {
+    window.location.href = "/";
+  }
+
   private showGameResult(isWin: boolean, message: string) {
-    // Create level complete display
-    const resultDisplay = this.add.text(
+    // Create victory display
+    const victoryDisplay = this.add.text(
       this.cameras.main.centerX,
-      this.cameras.main.centerY - 20,
-      "LEVEL COMPLETE",
+      this.cameras.main.centerY - 80,
+      "YOU WON!",
       {
-        fontSize: "32px",
+        fontSize: "36px",
         color: "#00ff00",
+        fontFamily: "monospace",
+        backgroundColor: "#000000",
+        padding: { x: 20, y: 10 },
+      }
+    );
+    victoryDisplay.setOrigin(0.5);
+    victoryDisplay.setDepth(1000);
+    victoryDisplay.setScrollFactor(0);
+
+    // Create reward display
+    const rewardDisplay = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY - 30,
+      "+100 points",
+      {
+        fontSize: "24px",
+        color: "#ffff00",
         fontFamily: "monospace",
         backgroundColor: "#000000",
         padding: { x: 16, y: 8 },
       }
     );
-    resultDisplay.setOrigin(0.5);
-    resultDisplay.setDepth(1000);
-    resultDisplay.setScrollFactor(0);
+    rewardDisplay.setOrigin(0.5);
+    rewardDisplay.setDepth(1000);
+    rewardDisplay.setScrollFactor(0);
 
-    const nextLevelDisplay = this.add.text(
-      this.cameras.main.centerX,
+    // Create restart button
+    const restartButton = this.add.text(
+      this.cameras.main.centerX - 80,
       this.cameras.main.centerY + 40,
-      "PRESS SPACE",
+      "REPEAT",
       {
-        fontSize: "16px",
+        fontSize: "18px",
         color: "#ffffff",
+        fontFamily: "monospace",
+        backgroundColor: "#0066cc",
+        padding: { x: 16, y: 8 },
+      }
+    );
+    restartButton.setOrigin(0.5);
+    restartButton.setDepth(1000);
+    restartButton.setScrollFactor(0);
+    restartButton.setInteractive({ useHandCursor: true });
+
+    // Create menu button
+    const menuButton = this.add.text(
+      this.cameras.main.centerX + 80,
+      this.cameras.main.centerY + 40,
+      "MENU",
+      {
+        fontSize: "18px",
+        color: "#ffffff",
+        fontFamily: "monospace",
+        backgroundColor: "#cc6600",
+        padding: { x: 16, y: 8 },
+      }
+    );
+    menuButton.setOrigin(0.5);
+    menuButton.setDepth(1000);
+    menuButton.setScrollFactor(0);
+    menuButton.setInteractive({ useHandCursor: true });
+
+    // Add button hover effects
+    restartButton.on("pointerover", () => {
+      restartButton.setStyle({ backgroundColor: "#0088ff" });
+    });
+    restartButton.on("pointerout", () => {
+      restartButton.setStyle({ backgroundColor: "#0066cc" });
+    });
+
+    menuButton.on("pointerover", () => {
+      menuButton.setStyle({ backgroundColor: "#ff8800" });
+    });
+    menuButton.on("pointerout", () => {
+      menuButton.setStyle({ backgroundColor: "#cc6600" });
+    });
+
+    // Add button functionality
+    restartButton.on("pointerdown", () => {
+      this.repeatHandler();
+    });
+
+    menuButton.on("pointerdown", () => {
+      this.menuHandler();
+    });
+
+    // Add keyboard controls
+    this.input.keyboard?.once("keydown-R", () => {
+      this.repeatHandler();
+    });
+
+    this.input.keyboard?.once("keydown-M", () => {
+      this.menuHandler();
+    });
+
+    // Add instruction text
+    const instructionDisplay = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY + 80,
+      "R - repeat, M - menu",
+      {
+        fontSize: "14px",
+        color: "#cccccc",
         fontFamily: "monospace",
         backgroundColor: "#000000",
         padding: { x: 12, y: 6 },
       }
     );
-    nextLevelDisplay.setOrigin(0.5);
-    nextLevelDisplay.setDepth(1000);
-    nextLevelDisplay.setScrollFactor(0);
-
-    // Add next level functionality
-    this.input.keyboard?.once("keydown-SPACE", () => {
-      this.scene.restart();
-    });
+    instructionDisplay.setOrigin(0.5);
+    instructionDisplay.setDepth(1000);
+    instructionDisplay.setScrollFactor(0);
   }
 
   private jumpBoing(

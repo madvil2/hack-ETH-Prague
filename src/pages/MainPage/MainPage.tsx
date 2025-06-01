@@ -122,21 +122,6 @@ const MainPage = () => {
             >
               <Link to={paths.levelEditor}>CREATE LEVEL</Link>
             </Button>
-            <Button
-              size="4"
-              variant="outline"
-              style={{
-                backgroundColor: "transparent",
-                color: "#ffffff",
-                border: "3px solid #00d4ff",
-                boxShadow: "4px 4px 0px #000",
-                fontFamily: "Press Start 2P",
-                fontSize: "12px",
-                padding: "15px 25px",
-              }}
-            >
-              LEARN MORE
-            </Button>
           </Flex>
         </Flex>
       </Container>
@@ -640,20 +625,6 @@ const MainPage = () => {
                 }}
               >
                 <Link to={paths.game}>LAUNCH GAME</Link>
-              </Button>
-              <Button
-                size={{ initial: "3", sm: "4", md: "4" }}
-                variant="outline"
-                style={{
-                  backgroundColor: "transparent",
-                  color: "#ffffff",
-                  border: "3px solid #00d4ff",
-                  boxShadow: "4px 4px 0px #000",
-                  width: "100%",
-                  maxWidth: "200px",
-                }}
-              >
-                VIEW WHITEPAPER
               </Button>
             </Flex>
           </Flex>

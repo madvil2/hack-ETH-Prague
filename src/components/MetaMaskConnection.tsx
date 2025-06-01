@@ -1,5 +1,4 @@
-import React from "react";
-import { Wallet, Loader2, AlertCircle } from "lucide-react";
+import { Wallet, Loader2, AlertCircle, LogOut } from "lucide-react";
 import { useMetaMask } from "../hooks/useMetaMask";
 
 interface MetaMaskConnectionProps {
@@ -13,6 +12,7 @@ export function MetaMaskConnection({
     address,
     isConnected: isWalletConnected,
     connectWallet,
+    disconnectWallet,
     isConnecting,
     error: metamaskError,
     isMetaMaskInstalled,
@@ -20,6 +20,10 @@ export function MetaMaskConnection({
 
   const handleConnectWallet = async () => {
     await connectWallet();
+  };
+
+  const handleDisconnectWallet = async () => {
+    await disconnectWallet();
   };
 
   if (!isMetaMaskInstalled) {
@@ -94,7 +98,7 @@ export function MetaMaskConnection({
     <div
       className={`bg-green-950/30 border border-green-700/40 rounded-lg p-6 ${className}`}
     >
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-2">
           <Wallet className="h-5 w-5 text-green-400" />
           <span className="text-green-400 font-medium">Wallet Connected</span>
@@ -104,6 +108,13 @@ export function MetaMaskConnection({
             ? `${address.slice(0, 6)}...${address.slice(-4)}`
             : "Connected"}
         </p>
+        <button
+          onClick={handleDisconnectWallet}
+          className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Disconnect Wallet
+        </button>
       </div>
     </div>
   );
