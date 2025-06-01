@@ -11,7 +11,7 @@ import {
   Separator,
   Container,
 } from "@radix-ui/themes";
-import paths from "@/routes/paths";
+import paths from "../../routes/paths";
 
 const MainPage = () => {
   return (

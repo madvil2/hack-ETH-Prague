@@ -9,15 +9,20 @@ body,
     width: 100%;
     margin: 0;
     padding: 0;
+    font-family: "Press Start 2P", monospace;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -moz-crisp-edges;
+}
+
+// Apply fixed positioning and hidden overflow only for game page
+body.game-page,
+body.game-page #root {
     overflow: hidden;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    font-family: "Press Start 2P", monospace;
-    image-rendering: -webkit-optimize-contrast;
-    image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
     background-attachment: fixed;
     background-size: cover;
@@ -65,6 +70,7 @@ button,
     box-shadow: 4px 4px 0px #ff0080;
     transition: all 0.1s;
     background: linear-gradient(45deg, #ff0080, #8000ff);
+    color: #ffffff;
 
     @include mobile {
         min-height: 44px;

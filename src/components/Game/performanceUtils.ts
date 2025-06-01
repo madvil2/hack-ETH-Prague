@@ -15,7 +15,7 @@ export const getOptimalSettings = () => {
   const isLowEndDevice = mobile && navigator.hardwareConcurrency <= 4;
 
   return {
-    fps: 60,
+    fps: 120,
     renderer: "WEBGL",
     animationFrameRate: isLowEndDevice ? 6 : mobile ? 8 : 12,
     deathAnimationFrameRate: mobile ? 2 : 3,

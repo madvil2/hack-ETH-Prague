@@ -2,6 +2,7 @@ import { createPlayer, createBlock } from "./gameObjects";
 import type { GameSceneState, Player } from "./types";
 import { getOptimalSettings, PerformanceMonitor } from "./performanceUtils";
 import { AdaptiveQuality } from "./optimizations";
+import { getFPSSettings } from "../../utils/fpsSettings";
 
 export class GameScene extends Phaser.Scene {
   private state: GameSceneState = {
@@ -17,6 +18,7 @@ export class GameScene extends Phaser.Scene {
 
   private performanceMonitor = new PerformanceMonitor();
   private adaptiveQuality = new AdaptiveQuality();
+  private fpsText: Phaser.GameObjects.Text | null = null;
 
   constructor() {
     super({ key: "GameScene" });
@@ -154,6 +156,7 @@ export class GameScene extends Phaser.Scene {
     this.createMapElements();
     this.setupControls();
     this.setupTouchControls();
+    this.createFPSDisplay();
   }
 
   private initializeMap() {
@@ -339,13 +342,14 @@ export class GameScene extends Phaser.Scene {
         this.physics.add.collider(
           this.player.sprite,
           flag.sprite,
-          this.nextChunk,
+          () => this.handleExit(x, y),
           undefined,
           this
         );
         flag.sprite.anims.play("flag-gif");
         flag.sprite.setDisplayOrigin(5, 16);
       },
+
       J: (x: number, y: number) => {
         const boing = createBlock(this, x, y, "boing");
         this.physics.add.collider(
@@ -377,6 +381,9 @@ export class GameScene extends Phaser.Scene {
     // Performance monitoring
     const currentFPS = this.performanceMonitor.update();
     this.adaptiveQuality.updatePerformance(currentFPS);
+
+    // Update FPS display
+    this.updateFPSDisplay(currentFPS);
 
     // Adaptive frame skipping based on quality
     if (this.adaptiveQuality.shouldSkipFrame()) {
@@ -429,6 +436,7 @@ export class GameScene extends Phaser.Scene {
 
     // Emergency stop if player is dead
     if (!this.player.alive) {
+      this.player.sprite.setVelocityX(0);
       this.player.sprite.setVelocityY(0);
       return;
     }
@@ -490,17 +498,23 @@ export class GameScene extends Phaser.Scene {
   private die() {
     const DEATH_ANIMATION_DURATION = 666;
 
-    this.resetTouchControls();
-
     if (!this.player.alive) return;
+
+    // Immediately set player as dead to stop all movement
+    this.player.alive = false;
+    this.resetTouchControls();
+    this.player.disableMovement();
+
+    // Stop all movement immediately
+    this.player.sprite.setVelocityX(0);
+    this.player.sprite.setVelocityY(0);
 
     if (this.player.sprite.body) {
       (this.player.sprite.body as Phaser.Physics.Arcade.Body).setAllowGravity(
         false
       );
     }
-    this.player.alive = false;
-    this.player.disableMovement();
+
     this.player.sprite.anims.play("player_death", true);
 
     this.time.delayedCall(DEATH_ANIMATION_DURATION, () => {
@@ -532,6 +546,70 @@ export class GameScene extends Phaser.Scene {
     this.player.sprite.setY(SPAWN_Y);
   }
 
+  private handleExit(exitX: number, exitY: number) {
+    console.log(`Player reached exit at coordinates: (${exitX}, ${exitY})`);
+
+    // Disable player movement
+    this.player.alive = false;
+    this.player.sprite.setVelocityX(0);
+    this.player.sprite.setVelocityY(0);
+
+    // Имитируем запрос к бэкенду с координатами выхода
+    this.mockBackendCall(exitX, exitY).then((result) => {
+      this.showGameResult(result.isWin, result.message);
+    });
+  }
+
+  private async mockBackendCall(
+    exitX: number,
+    exitY: number
+  ): Promise<{ isWin: boolean; message: string }> {
+    return {
+      isWin: true,
+      message: `Level complete! Exit at position (${exitX}, ${exitY})`,
+    };
+  }
+
+  private showGameResult(isWin: boolean, message: string) {
+    // Create level complete display
+    const resultDisplay = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY - 20,
+      "LEVEL COMPLETE",
+      {
+        fontSize: "32px",
+        color: "#00ff00",
+        fontFamily: "monospace",
+        backgroundColor: "#000000",
+        padding: { x: 16, y: 8 },
+      }
+    );
+    resultDisplay.setOrigin(0.5);
+    resultDisplay.setDepth(1000);
+    resultDisplay.setScrollFactor(0);
+
+    const nextLevelDisplay = this.add.text(
+      this.cameras.main.centerX,
+      this.cameras.main.centerY + 40,
+      "PRESS SPACE",
+      {
+        fontSize: "16px",
+        color: "#ffffff",
+        fontFamily: "monospace",
+        backgroundColor: "#000000",
+        padding: { x: 12, y: 6 },
+      }
+    );
+    nextLevelDisplay.setOrigin(0.5);
+    nextLevelDisplay.setDepth(1000);
+    nextLevelDisplay.setScrollFactor(0);
+
+    // Add next level functionality
+    this.input.keyboard?.once("keydown-SPACE", () => {
+      this.scene.restart();
+    });
+  }
+
   private jumpBoing(
     object1:
       | Phaser.Types.Physics.Arcade.GameObjectWithBody
@@ -559,5 +637,46 @@ export class GameScene extends Phaser.Scene {
     this.isTouchingLeft = left;
     this.isTouchingRight = right;
     this.isTouchingUp = up;
+  }
+
+  private createFPSDisplay() {
+    const settings = getFPSSettings();
+    if (settings.showFPS) {
+      this.fpsText = this.add.text(10, 10, "FPS: 0", {
+        fontSize: "16px",
+        color: "#00ff00",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        padding: { x: 8, y: 4 },
+      });
+      this.fpsText.setDepth(1000); // Ensure it's always on top
+      this.fpsText.setScrollFactor(0); // Keep it fixed on screen
+    }
+  }
+
+  private updateFPSDisplay(currentFPS: number) {
+    const settings = getFPSSettings();
+
+    if (settings.showFPS && !this.fpsText) {
+      // Create FPS display if settings changed to show FPS
+      this.createFPSDisplay();
+    } else if (!settings.showFPS && this.fpsText) {
+      // Remove FPS display if settings changed to hide FPS
+      this.fpsText.destroy();
+      this.fpsText = null;
+    }
+
+    if (this.fpsText && settings.showFPS) {
+      const fps = Math.round(currentFPS);
+      this.fpsText.setText(`FPS: ${fps}`);
+
+      // Color coding based on FPS
+      if (fps >= 50) {
+        this.fpsText.setColor("#00ff00"); // Green for good FPS
+      } else if (fps >= 30) {
+        this.fpsText.setColor("#ffff00"); // Yellow for moderate FPS
+      } else {
+        this.fpsText.setColor("#ff0000"); // Red for low FPS
+      }
+    }
   }
 }
