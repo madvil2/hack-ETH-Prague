@@ -595,20 +595,68 @@ export class GameScene extends Phaser.Scene {
     this.player.sprite.setVelocityX(0);
     this.player.sprite.setVelocityY(0);
 
-    // Имитируем запрос к бэкенду с координатами выхода
-    this.mockBackendCall(exitX, exitY).then((result) => {
+    // Use smart contract to determine flag outcome
+    this.checkFlagOutcome(exitX, exitY).then((result) => {
       this.showGameResult(result.isWin, result.message);
     });
   }
 
-  private async mockBackendCall(
+  private async checkFlagOutcome(
     exitX: number,
     exitY: number
   ): Promise<{ isWin: boolean; message: string }> {
-    return {
-      isWin: true,
-      message: `Level complete! Exit at position (${exitX}, ${exitY})`,
-    };
+    try {
+      // Import the smart contract service
+      const { smartContractService } = await import(
+        "../../utils/smartContractService"
+      );
+
+      // Try to initialize the service if not already connected
+      if (!smartContractService.isConnected()) {
+        const initialized = await smartContractService.initialize();
+        if (!initialized) {
+          // Fallback to random if wallet not connected
+          const isWin = Math.random() > 0.5;
+          return {
+            isWin,
+            message: isWin
+              ? "YOU WON! (Wallet not connected - using fallback)"
+              : "YOU LOST! Try again! (Wallet not connected - using fallback)",
+          };
+        }
+      }
+
+      // Use smart contract to get random number (0 or 1)
+      const randomResult = await smartContractService.getRandomNumber(0, 1);
+
+      if (randomResult === null) {
+        // Fallback if smart contract call fails
+        const isWin = Math.random() > 0.5;
+        return {
+          isWin,
+          message: isWin
+            ? "YOU WON! (Contract call failed - using fallback)"
+            : "YOU LOST! Try again! (Contract call failed - using fallback)",
+        };
+      }
+
+      const isWin = randomResult === 1;
+
+      return {
+        isWin,
+        message: isWin ? `Congratulations!` : `Try again!`,
+      };
+    } catch (error) {
+      console.error("Error calling smart contract:", error);
+      // Fallback to random if there's an error
+      const isWin = Math.random() > 0.5;
+      return {
+        isWin,
+        message: isWin
+          ? "YOU WON! (Error with contract - using fallback)"
+          : "Try again! (Error with contract - using fallback)",
+      };
+    }
   }
 
   // Default handlers that can be overridden
@@ -621,44 +669,68 @@ export class GameScene extends Phaser.Scene {
   }
 
   private showGameResult(isWin: boolean, message: string) {
-    // Create victory display
-    const victoryDisplay = this.add.text(
+    // Create result display with dynamic text and color
+    const resultText = isWin ? "YOU WON!" : "YOU LOST!";
+    const resultColor = isWin ? "#00ff00" : "#ff0000";
+
+    const resultDisplay = this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY - 80,
-      "YOU WON!",
+      resultText,
       {
         fontSize: "36px",
-        color: "#00ff00",
+        color: resultColor,
         fontFamily: "monospace",
         backgroundColor: "#000000",
         padding: { x: 20, y: 10 },
       }
     );
-    victoryDisplay.setOrigin(0.5);
-    victoryDisplay.setDepth(1000);
-    victoryDisplay.setScrollFactor(0);
+    resultDisplay.setOrigin(0.5);
+    resultDisplay.setDepth(1000);
+    resultDisplay.setScrollFactor(0);
 
-    // Create reward display
-    const rewardDisplay = this.add.text(
+    // Create message display (shows smart contract result)
+    const messageDisplay = this.add.text(
       this.cameras.main.centerX,
       this.cameras.main.centerY - 30,
-      "+100 points",
+      message,
       {
-        fontSize: "24px",
-        color: "#ffff00",
+        fontSize: "16px",
+        color: "#ffffff",
         fontFamily: "monospace",
         backgroundColor: "#000000",
         padding: { x: 16, y: 8 },
+        wordWrap: { width: 600 },
+        align: "center",
       }
     );
-    rewardDisplay.setOrigin(0.5);
-    rewardDisplay.setDepth(1000);
-    rewardDisplay.setScrollFactor(0);
+    messageDisplay.setOrigin(0.5);
+    messageDisplay.setDepth(1000);
+    messageDisplay.setScrollFactor(0);
+
+    // Create reward display (only show if won)
+    if (isWin) {
+      const rewardDisplay = this.add.text(
+        this.cameras.main.centerX,
+        this.cameras.main.centerY + 10,
+        "+100 points",
+        {
+          fontSize: "24px",
+          color: "#ffff00",
+          fontFamily: "monospace",
+          backgroundColor: "#000000",
+          padding: { x: 16, y: 8 },
+        }
+      );
+      rewardDisplay.setOrigin(0.5);
+      rewardDisplay.setDepth(1000);
+      rewardDisplay.setScrollFactor(0);
+    }
 
     // Create restart button
     const restartButton = this.add.text(
       this.cameras.main.centerX - 80,
-      this.cameras.main.centerY + 40,
+      this.cameras.main.centerY + (isWin ? 60 : 40),
       "REPEAT",
       {
         fontSize: "18px",
@@ -676,7 +748,7 @@ export class GameScene extends Phaser.Scene {
     // Create menu button
     const menuButton = this.add.text(
       this.cameras.main.centerX + 80,
-      this.cameras.main.centerY + 40,
+      this.cameras.main.centerY + (isWin ? 60 : 40),
       "MENU",
       {
         fontSize: "18px",
@@ -727,8 +799,8 @@ export class GameScene extends Phaser.Scene {
     // Add instruction text
     const instructionDisplay = this.add.text(
       this.cameras.main.centerX,
-      this.cameras.main.centerY + 80,
-      "R - repeat, M - menu",
+      this.cameras.main.centerY + (isWin ? 100 : 80),
+      "Press R to repeat or M for menu",
       {
         fontSize: "14px",
         color: "#cccccc",
