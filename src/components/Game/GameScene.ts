@@ -20,8 +20,9 @@ export class GameScene extends Phaser.Scene {
   private adaptiveQuality = new AdaptiveQuality();
   private fpsText: Phaser.GameObjects.Text | null = null;
 
-  constructor() {
-    super({ key: "GameScene" });
+  constructor(config?: { key: string }) {
+    super(config || { key: "GameScene" });
+    this.fpsText = null;
   }
 
   get player() {
@@ -127,8 +128,18 @@ export class GameScene extends Phaser.Scene {
         url: "/sprites/flag_sheet.png",
         config: { frameWidth: 32, frameHeight: 32 },
       },
-      { type: "text", key: "map", url: "/map.txt" },
+      {
+        type: "text",
+        key: "map",
+        url: this.scene.key === "GameScene2" ? "/map1.txt" : "/map.txt",
+      },
     ];
+
+    // Отладка: показываем какой файл карты загружается
+    const mapAsset = assets.find((asset) => asset.key === "map");
+    if (mapAsset) {
+      console.log(`[${this.scene.key}] Загружаем файл карты: ${mapAsset.url}`);
+    }
 
     for (const asset of assets) {
       switch (asset.type) {
@@ -160,10 +171,21 @@ export class GameScene extends Phaser.Scene {
   }
 
   private initializeMap() {
+    console.log(`[${this.scene.key}] Загрузка карты...`);
     const mapText = this.cache.text.get("map");
+    console.log(`[${this.scene.key}] Сырые данные карты:`, mapText);
+
     this.mapData = mapText
       .split("\n")
-      .map((row: string) => row.replace(/[\[\],\r']/g, "").split(" "));
+      .map((row: string) => row.replace(/[\[\],\r']/g, "").split(" "))
+      .filter((row) => row.length > 0 && row[0] !== "");
+
+    console.log(`[${this.scene.key}] Обработанные данные карты:`, this.mapData);
+    console.log(
+      `[${this.scene.key}] Размер карты: ${this.mapData.length} строк, ${
+        this.mapData[0]?.length || 0
+      } столбцов`
+    );
   }
 
   private initializePhysics() {
@@ -324,44 +346,56 @@ export class GameScene extends Phaser.Scene {
     const tileHandlers = {
       p: (x: number, y: number) => {
         this.platform.create(x, y, "platform").refreshBody();
-        this.physics.add.collider(this.player.sprite, this.platform);
+        if (this.state.player) {
+          this.physics.add.collider(this.player.sprite, this.platform);
+        }
       },
       F: (x: number, y: number) => {
         const fire = createBlock(this, x, y, "fire");
-        this.physics.add.collider(
-          this.player.sprite,
-          fire.sprite,
-          this.die,
-          undefined,
-          this
-        );
+        if (this.state.player) {
+          this.physics.add.collider(
+            this.player.sprite,
+            fire.sprite,
+            this.die,
+            undefined,
+            this
+          );
+        }
         fire.sprite.anims.play("fire");
       },
       E: (x: number, y: number) => {
         const flag = createBlock(this, x, y, "flag");
-        this.physics.add.collider(
-          this.player.sprite,
-          flag.sprite,
-          () => this.handleExit(x, y),
-          undefined,
-          this
-        );
+        if (this.state.player) {
+          this.physics.add.collider(
+            this.player.sprite,
+            flag.sprite,
+            () => this.handleExit(x, y),
+            undefined,
+            this
+          );
+        }
         flag.sprite.anims.play("flag-gif");
         flag.sprite.setDisplayOrigin(5, 16);
       },
 
       J: (x: number, y: number) => {
         const boing = createBlock(this, x, y, "boing");
-        this.physics.add.collider(
-          this.player.sprite,
-          boing.sprite,
-          this.jumpBoing,
-          undefined,
-          this
-        );
+        if (this.state.player) {
+          this.physics.add.collider(
+            this.player.sprite,
+            boing.sprite,
+            this.jumpBoing,
+            undefined,
+            this
+          );
+        }
         boing.sprite.anims.play("slime");
       },
     } as const;
+
+    console.log(
+      `[${this.scene.key}] Начинаем создание карты из ${this.mapData.length} строк`
+    );
 
     for (let rowIndex = 0; rowIndex < this.mapData.length; rowIndex++) {
       const row = this.mapData[rowIndex];
@@ -375,6 +409,8 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
+
+    console.log(`[${this.scene.key}] Карта создана успешно`);
   }
 
   update() {
@@ -392,7 +428,7 @@ export class GameScene extends Phaser.Scene {
 
     // Performance monitoring without console output
 
-    if (!this.player.alive) return;
+    if (!this.state.player || !this.player.alive) return;
 
     this.handlePlayerMovement();
 
@@ -434,10 +470,12 @@ export class GameScene extends Phaser.Scene {
     const MOVE_SPEED = 250;
     const JUMP_STRENGTH = 1;
 
-    // Emergency stop if player is dead
-    if (!this.player.alive) {
-      this.player.sprite.setVelocityX(0);
-      this.player.sprite.setVelocityY(0);
+    // Emergency stop if player doesn't exist or is dead
+    if (!this.state.player || !this.player.alive) {
+      if (this.state.player && this.player.sprite) {
+        this.player.sprite.setVelocityX(0);
+        this.player.sprite.setVelocityY(0);
+      }
       return;
     }
 
@@ -498,7 +536,7 @@ export class GameScene extends Phaser.Scene {
   private die() {
     const DEATH_ANIMATION_DURATION = 666;
 
-    if (!this.player.alive) return;
+    if (!this.state.player || !this.player.alive) return;
 
     // Immediately set player as dead to stop all movement
     this.player.alive = false;
@@ -529,6 +567,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private respawnPlayer() {
+    if (!this.state.player) return;
     this.player.resetPosition();
     this.player.enableMovement();
     this.player.alive = true;
@@ -540,6 +579,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private nextChunk() {
+    if (!this.state.player) return;
     const SPAWN_X = 16;
     const SPAWN_Y = 450;
     this.player.sprite.setX(SPAWN_X);
@@ -549,6 +589,7 @@ export class GameScene extends Phaser.Scene {
   private handleExit(exitX: number, exitY: number) {
     console.log(`Player reached exit at coordinates: (${exitX}, ${exitY})`);
 
+    if (!this.state.player) return;
     // Disable player movement
     this.player.alive = false;
     this.player.sprite.setVelocityX(0);
@@ -677,6 +718,24 @@ export class GameScene extends Phaser.Scene {
       } else {
         this.fpsText.setColor("#ff0000"); // Red for low FPS
       }
+    }
+  }
+
+  showPlayer() {
+    if (!this.state.player) {
+      const INITIAL_X = 16;
+      const INITIAL_Y = 450;
+      this.player = createPlayer(this, INITIAL_X, INITIAL_Y);
+    } else if (this.state.player && this.player.sprite) {
+      this.player.sprite.setVisible(true);
+      this.player.sprite.setActive(true);
+    }
+  }
+
+  hidePlayer() {
+    if (this.state.player && this.player.sprite) {
+      this.player.sprite.setVisible(false);
+      this.player.sprite.setActive(false);
     }
   }
 }

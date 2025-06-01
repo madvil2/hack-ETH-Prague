@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import type React from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./styles.module.scss";
 import { GameScene } from "./GameScene";
 import TouchControls from "./TouchControls";
@@ -11,6 +11,18 @@ const Game: React.FC<GameProps> = ({ onGameReady }) => {
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const gameSceneRef = useRef<GameScene | null>(null);
+  const [currentMap, setCurrentMap] = useState<number>(1);
+  const totalMaps = 2; // Currently we have 2 maps, can be expanded
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Auto-switch maps every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      switchToNextMap();
+    }, 10000); // Switch every 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Prevent pinch zoom on mobile devices
   useEffect(() => {
@@ -30,70 +42,131 @@ const Game: React.FC<GameProps> = ({ onGameReady }) => {
     };
   }, []);
 
+  const createGameConfig = (
+    parent: HTMLElement
+  ): Phaser.Types.Core.GameConfig => {
+    const settings = getOptimalSettings();
+    return {
+      type: settings.renderer === "CANVAS" ? Phaser.CANVAS : Phaser.WEBGL,
+      width: 512,
+      height: 512,
+      parent: parent,
+      fps: {
+        target: settings.fps,
+        forceSetTimeOut: true,
+        smoothStep: true,
+        panicMax: 120,
+      },
+      render: settings.render,
+      physics: {
+        default: "arcade",
+        arcade: {
+          gravity: { x: 0, y: 1000 },
+          debug: false,
+          tileBias: settings.physics.tileBias,
+          overlapBias: settings.physics.overlapBias,
+          fps: settings.fps,
+          fixedStep: false,
+          timeScale: 1,
+        },
+      },
+      scene: [
+        class extends GameScene {
+          constructor() {
+            super({ key: "GameScene1" });
+          }
+        },
+        class extends GameScene {
+          constructor() {
+            super({ key: "GameScene2" });
+          }
+        },
+      ],
+      scale: {
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        fullscreenTarget: parent,
+        expandParent: true,
+        autoRound: true,
+      },
+      powerPreference: settings.powerPreference as
+        | "high-performance"
+        | "low-power",
+      disableContextMenu: true,
+      backgroundColor: "#87CEEB",
+      loader: {
+        crossOrigin: "anonymous",
+        maxParallelDownloads: 4,
+      },
+      dom: {
+        createContainer: false,
+      },
+      input: {
+        touch: {
+          capture: false,
+        },
+      },
+    };
+  };
+
+  const switchToNextMap = () => {
+    if (isTransitioning || !phaserGameRef.current) return;
+
+    setIsTransitioning(true);
+    const nextMap = currentMap >= totalMaps ? 1 : currentMap + 1;
+    const nextSceneKey = `GameScene${nextMap}`;
+    const currentSceneKey = `GameScene${currentMap}`;
+
+    // Stop current scene and start next scene
+    const currentScene = phaserGameRef.current.scene.getScene(
+      currentSceneKey
+    ) as GameScene;
+    const nextScene = phaserGameRef.current.scene.getScene(
+      nextSceneKey
+    ) as GameScene;
+
+    if (currentScene) {
+      currentScene.scene.stop();
+    }
+
+    if (nextScene) {
+      nextScene.scene.start();
+      gameSceneRef.current = nextScene;
+
+      // Override handleExit for the new scene
+      const originalHandleExit = (nextScene as any).handleExit;
+      (nextScene as any).handleExit = function (exitX: number, exitY: number) {
+        console.log(`Player reached exit at coordinates: (${exitX}, ${exitY})`);
+        switchToNextMap();
+      };
+    }
+
+    // Transition animation
+    setTimeout(() => {
+      setCurrentMap(nextMap);
+      setIsTransitioning(false);
+    }, 300);
+  };
+
   useEffect(() => {
     if (gameRef.current && !phaserGameRef.current) {
-      const settings = getOptimalSettings();
-
-      const config: Phaser.Types.Core.GameConfig = {
-        type: settings.renderer === "CANVAS" ? Phaser.CANVAS : Phaser.WEBGL,
-        width: 512,
-        height: 512,
-        parent: gameRef.current,
-        fps: {
-          target: settings.fps,
-          forceSetTimeOut: true,
-          smoothStep: true,
-          panicMax: 120,
-        },
-        render: settings.render,
-        physics: {
-          default: "arcade",
-          arcade: {
-            gravity: { x: 0, y: 1000 },
-            debug: false,
-            tileBias: settings.physics.tileBias,
-            overlapBias: settings.physics.overlapBias,
-            fps: settings.fps,
-            fixedStep: false,
-            timeScale: 1,
-          },
-        },
-        scene: GameScene,
-        scale: {
-          mode: Phaser.Scale.FIT,
-          autoCenter: Phaser.Scale.CENTER_BOTH,
-          fullscreenTarget: gameRef.current,
-          expandParent: true,
-          autoRound: true,
-        },
-        powerPreference: settings.powerPreference as
-          | "high-performance"
-          | "low-power",
-        disableContextMenu: true,
-        backgroundColor: "#87CEEB",
-        loader: {
-          crossOrigin: "anonymous",
-          maxParallelDownloads: 4,
-        },
-        dom: {
-          createContainer: false,
-        },
-        input: {
-          touch: {
-            capture: false,
-          },
-        },
-      };
-
+      const config = createGameConfig(gameRef.current);
       phaserGameRef.current = new Phaser.Game(config);
 
-      // Wait for the scene to be properly initialized
       const checkScene = () => {
         const scene = phaserGameRef.current?.scene.getScene(
-          "GameScene"
+          "GameScene1"
         ) as GameScene;
         if (scene?.scene?.isActive()) {
           gameSceneRef.current = scene;
+          // Override handleExit to switch maps
+          const originalHandleExit = (scene as any).handleExit;
+          (scene as any).handleExit = function (exitX: number, exitY: number) {
+            console.log(
+              `Player reached exit at coordinates: (${exitX}, ${exitY})`
+            );
+            switchToNextMap();
+          };
           if (onGameReady) {
             onGameReady();
           }
@@ -102,7 +175,6 @@ const Game: React.FC<GameProps> = ({ onGameReady }) => {
         }
       };
 
-      // Start checking for scene readiness
       setTimeout(checkScene, 100);
     }
 
@@ -115,16 +187,25 @@ const Game: React.FC<GameProps> = ({ onGameReady }) => {
   }, [onGameReady]);
 
   const handleTouchStart = (direction: "left" | "right" | "up") => {
-    if (gameSceneRef.current) {
-      const scene = gameSceneRef.current;
+    const activeScene = gameSceneRef.current;
+
+    if (activeScene) {
       if (direction === "left") {
-        scene.setTouchControls(true, scene.isTouchingRight, scene.isTouchingUp);
+        activeScene.setTouchControls(
+          true,
+          activeScene.isTouchingRight,
+          activeScene.isTouchingUp
+        );
       } else if (direction === "right") {
-        scene.setTouchControls(scene.isTouchingLeft, true, scene.isTouchingUp);
+        activeScene.setTouchControls(
+          activeScene.isTouchingLeft,
+          true,
+          activeScene.isTouchingUp
+        );
       } else if (direction === "up") {
-        scene.setTouchControls(
-          scene.isTouchingLeft,
-          scene.isTouchingRight,
+        activeScene.setTouchControls(
+          activeScene.isTouchingLeft,
+          activeScene.isTouchingRight,
           true
         );
       }
@@ -132,20 +213,25 @@ const Game: React.FC<GameProps> = ({ onGameReady }) => {
   };
 
   const handleTouchEnd = (direction: "left" | "right" | "up") => {
-    if (gameSceneRef.current) {
-      const scene = gameSceneRef.current;
+    const activeScene = gameSceneRef.current;
+
+    if (activeScene) {
       if (direction === "left") {
-        scene.setTouchControls(
+        activeScene.setTouchControls(
           false,
-          scene.isTouchingRight,
-          scene.isTouchingUp
+          activeScene.isTouchingRight,
+          activeScene.isTouchingUp
         );
       } else if (direction === "right") {
-        scene.setTouchControls(scene.isTouchingLeft, false, scene.isTouchingUp);
+        activeScene.setTouchControls(
+          activeScene.isTouchingLeft,
+          false,
+          activeScene.isTouchingUp
+        );
       } else if (direction === "up") {
-        scene.setTouchControls(
-          scene.isTouchingLeft,
-          scene.isTouchingRight,
+        activeScene.setTouchControls(
+          activeScene.isTouchingLeft,
+          activeScene.isTouchingRight,
           false
         );
       }
@@ -154,7 +240,9 @@ const Game: React.FC<GameProps> = ({ onGameReady }) => {
 
   return (
     <div className={styles.gameWrapper}>
-      <div ref={gameRef} className={styles.gameContainer} />
+      <div className={styles.singleMapContainer}>
+        <div ref={gameRef} className={styles.gameContainer} />
+      </div>
       <TouchControls
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}

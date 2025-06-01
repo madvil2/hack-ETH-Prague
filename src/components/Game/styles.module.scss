@@ -17,14 +17,32 @@
   -webkit-overflow-scrolling: touch;
 }
 
-.gameContainer {
+.mapsContainer {
+  display: flex;
+  gap: 20px;
+  width: 100%;
+  max-width: 1044px; /* 512px * 2 + 20px gap */
+  height: 512px;
+  overflow: visible;
+}
+
+.singleMapContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 100%;
   max-width: 512px;
   height: 512px;
-  border: 2px solid $gray-700;
+  overflow: visible;
+}
+
+.gameContainer {
+  width: 512px;
+  height: 512px;
+  border: 2px solid #4ade80;
   border-radius: $border-radius-2xl;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(74, 222, 128, 0.4);
   touch-action: manipulation;
   -webkit-user-select: none;
   -moz-user-select: none;
@@ -32,6 +50,8 @@
   user-select: none;
   -webkit-touch-callout: none;
   position: relative;
+  transition: all 0.3s ease-in-out;
+  z-index: 2;
 }
 
 .touchControls {
@@ -88,14 +108,21 @@
     min-height: 100dvh;
   }
 
-  .gameContainer {
+  .mapsContainer {
+    flex-direction: column;
+    gap: 10px;
     max-width: calc(100vw - 2 * $spacing-3);
-    max-height: calc(100vw - 2 * $spacing-3);
     height: auto;
-    width: auto;
+  }
+
+  .gameContainer {
+    width: calc(100vw - 2 * $spacing-3);
+    height: calc(100vw - 2 * $spacing-3);
     aspect-ratio: 1;
     min-width: 280px;
     min-height: 280px;
+    max-width: 400px;
+    max-height: 400px;
   }
 
   .touchControls {
