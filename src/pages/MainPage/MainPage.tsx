@@ -89,7 +89,7 @@ const MainPage = () => {
             decentralized gaming ecosystem. Wager tokens, find the correct exit,
             and win rewards in this skill-based GameFi experience.
           </Text>
-          <Flex gap="4" align="center">
+          <Flex gap="4" align="center" wrap="wrap" justify="center">
             <Button
               size="4"
               asChild
@@ -108,12 +108,31 @@ const MainPage = () => {
             </Button>
             <Button
               size="4"
+              asChild
+              style={{
+                backgroundColor: "#8000ff",
+                color: "#ffffff",
+                border: "3px solid #8000ff",
+                fontFamily: "Press Start 2P",
+                fontSize: "14px",
+                padding: "15px 30px",
+                boxShadow: "4px 4px 0px #000",
+                textDecoration: "none",
+              }}
+            >
+              <Link to={paths.levelEditor}>CREATE LEVEL</Link>
+            </Button>
+            <Button
+              size="4"
               variant="outline"
               style={{
                 backgroundColor: "transparent",
                 color: "#ffffff",
                 border: "3px solid #00d4ff",
                 boxShadow: "4px 4px 0px #000",
+                fontFamily: "Press Start 2P",
+                fontSize: "12px",
+                padding: "15px 25px",
               }}
             >
               LEARN MORE

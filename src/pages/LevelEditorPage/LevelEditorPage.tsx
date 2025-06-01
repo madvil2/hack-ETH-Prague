@@ -6,12 +6,24 @@ import paths from "@/routes/paths";
 import styles from "./styles.module.scss";
 
 const TILE_TYPES = {
-  "*": { name: "Empty", color: "#87CEEB" },
-  p: { name: "Platform", color: "#8B4513" },
-  F: { name: "Fire", color: "#FF4500" },
-  E: { name: "Exit", color: "#32CD32" },
-  J: { name: "Jump Pad", color: "#FFD700" },
-  "+": { name: "Player Start", color: "#FF69B4" },
+  "*": { name: "Empty", color: "#87CEEB", texture: "/sprites/sky_tile.png" },
+  p: {
+    name: "Platform",
+    color: "#8B4513",
+    texture: "/sprites/platform_tile.png",
+  },
+  F: { name: "Fire", color: "#FF4500", texture: "/sprites/fire_sheet.png" },
+  E: { name: "Exit", color: "#32CD32", texture: "/sprites/flag_sheet.png" },
+  J: {
+    name: "Jump Pad",
+    color: "#FFD700",
+    texture: "/sprites/boing_sheet.png",
+  },
+  "+": {
+    name: "Player Start",
+    color: "#FF69B4",
+    texture: "/sprites/Knight.png",
+  },
 };
 
 const LevelEditorPage = () => {
@@ -77,10 +89,24 @@ const LevelEditorPage = () => {
                 backgroundColor:
                   selectedTile === symbol ? info.color : "transparent",
                 color: selectedTile === symbol ? "white" : info.color,
-                border: `2px solid ${info.color}`,
+                border: `3px solid ${info.color}`,
+                padding: "8px 12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
               }}
             >
-              {symbol} - {info.name}
+              <img
+                src={info.texture}
+                alt={info.name}
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  objectFit: "cover",
+                  imageRendering: "pixelated",
+                }}
+              />
+              {info.name}
             </Button>
           ))}
         </Flex>
@@ -99,15 +125,19 @@ const LevelEditorPage = () => {
                   key={`${rowIndex}-${colIndex}`}
                   className={styles.mapTile}
                   style={{
-                    backgroundColor:
-                      TILE_TYPES[tile as keyof typeof TILE_TYPES]?.color ||
-                      "#87CEEB",
+                    backgroundImage: `url(${
+                      TILE_TYPES[tile as keyof typeof TILE_TYPES]?.texture ||
+                      "/sprites/sky_tile.png"
+                    })`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    imageRendering: "pixelated",
                   }}
                   onClick={() => handleTileClick(rowIndex, colIndex)}
-                  title={`${rowIndex},${colIndex}: ${tile}`}
-                >
-                  {tile}
-                </button>
+                  title={`${rowIndex},${colIndex}: ${
+                    TILE_TYPES[tile as keyof typeof TILE_TYPES]?.name || tile
+                  }`}
+                ></button>
               ))}
             </div>
           ))}
