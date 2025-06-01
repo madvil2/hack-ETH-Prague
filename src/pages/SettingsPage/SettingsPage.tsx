@@ -16,6 +16,7 @@ import paths from "../../routes/paths";
 import { useFPSSettings } from "../../utils/fpsSettings";
 import LanguageSwitcher from "../../components/LanguageSwitcher";
 import { NitroliteConnection } from "../../components/nitrolite/NitroliteConnection";
+import { MetaMaskConnection } from "../../components/MetaMaskConnection";
 
 const SettingsPage = () => {
   const { t } = useTranslation();
@@ -86,6 +87,17 @@ const SettingsPage = () => {
                 </Flex>
                 <LanguageSwitcher />
               </Flex>
+            </Flex>
+          </Card>
+
+          {/* Wallet Connection Settings */}
+          <Card>
+            <Flex direction="column" gap="4" p="4">
+              <Heading size="4">
+                {t("settings.wallet.title", "Wallet Connection")}
+              </Heading>
+
+              <MetaMaskConnection />
             </Flex>
           </Card>
 

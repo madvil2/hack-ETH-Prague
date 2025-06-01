@@ -1,16 +1,24 @@
 import { useTranslation } from "react-i18next";
-import { Heading, Flex, Button, Container, Card, Text } from "@radix-ui/themes";
+import { Heading, Flex, Button } from "@radix-ui/themes";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Game from "@/components/Game";
 import paths from "@/routes/paths";
-import { MetaMaskConnection } from "@/components/MetaMaskConnection";
 import { useMetaMask } from "../../hooks/useMetaMask";
 
 const GamePage = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isConnected: isWalletConnected, address } = useMetaMask();
+  const {
+    isConnected: isWalletConnected,
+    address,
+    isConnecting,
+  } = useMetaMask();
+
+  console.log("[GamePage] Rendered with wallet state:", {
+    isWalletConnected,
+    address,
+  });
 
   useEffect(() => {
     // Add game-page class to body when component mounts
@@ -22,9 +30,34 @@ const GamePage = () => {
     };
   }, []);
 
+  useEffect(() => {
+    console.log(
+      "[GamePage] useEffect triggered - wallet connected:",
+      isWalletConnected,
+      "isConnecting:",
+      isConnecting
+    );
+    // Redirect to settings if wallet is not connected and not currently connecting
+    if (!isWalletConnected && !isConnecting) {
+      console.log(
+        "[GamePage] Wallet not connected and not connecting, redirecting to settings"
+      );
+      navigate(paths.settings);
+    } else {
+      console.log(
+        "[GamePage] Wallet is connected or connecting, staying on game page"
+      );
+    }
+  }, [isWalletConnected, isConnecting, navigate]);
+
   const handleGameReady = () => {
     // Game ready callback
   };
+
+  console.log(
+    "[GamePage] Rendering with isWalletConnected:",
+    isWalletConnected
+  );
 
   return (
     <Flex direction="column" gap="4">
@@ -42,25 +75,21 @@ const GamePage = () => {
         )}
       </Flex>
 
-      {!isWalletConnected ? (
-        <Container size="2">
-          <Card>
-            <Flex direction="column" gap="4" p="6" align="center">
-              <Heading size="4">
-                {t("game.wallet_required", "Wallet Connection Required")}
-              </Heading>
-              <Text size="3" color="gray" align="center">
-                {t(
-                  "game.wallet_required_description",
-                  "Please connect your MetaMask wallet to start playing the game."
-                )}
-              </Text>
-              <MetaMaskConnection />
-            </Flex>
-          </Card>
-        </Container>
+      {isWalletConnected ? (
+        <>
+          {console.log("[GamePage] Rendering Game component")}
+          <Game onGameReady={handleGameReady} />
+        </>
+      ) : isConnecting ? (
+        <>
+          {console.log("[GamePage] Wallet connecting, showing loading")}
+          <div>Connecting wallet...</div>
+        </>
       ) : (
-        <Game onGameReady={handleGameReady} />
+        <>
+          {console.log("[GamePage] Wallet not connected, should redirect soon")}
+          <div>Redirecting to settings...</div>
+        </>
       )}
     </Flex>
   );

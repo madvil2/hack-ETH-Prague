@@ -1,4 +1,4 @@
-import { Wallet, Loader2, AlertCircle, LogOut } from "lucide-react";
+import { Wallet, Loader2, AlertCircle } from "lucide-react";
 import { useMetaMask } from "../hooks/useMetaMask";
 
 interface MetaMaskConnectionProps {
@@ -12,21 +12,29 @@ export function MetaMaskConnection({
     address,
     isConnected: isWalletConnected,
     connectWallet,
-    disconnectWallet,
     isConnecting,
     error: metamaskError,
     isMetaMaskInstalled,
   } = useMetaMask();
 
-  const handleConnectWallet = async () => {
-    await connectWallet();
-  };
+  console.log("[MetaMaskConnection] Component state:", {
+    address,
+    isWalletConnected,
+    isConnecting,
+    metamaskError,
+    isMetaMaskInstalled,
+  });
 
-  const handleDisconnectWallet = async () => {
-    await disconnectWallet();
+  const handleConnectWallet = async () => {
+    console.log("[MetaMaskConnection] handleConnectWallet called");
+    const result = await connectWallet();
+    console.log("[MetaMaskConnection] connectWallet result:", result);
   };
 
   if (!isMetaMaskInstalled) {
+    console.log(
+      "[MetaMaskConnection] MetaMask not installed, showing install prompt"
+    );
     return (
       <div
         className={`bg-amber-900/20 border border-amber-800/30 rounded-lg p-6 text-amber-300 ${className}`}
@@ -54,6 +62,9 @@ export function MetaMaskConnection({
   }
 
   if (!isWalletConnected) {
+    console.log(
+      "[MetaMaskConnection] Wallet not connected, showing connect UI"
+    );
     return (
       <div
         className={`bg-gradient-to-br from-blue-950/30 to-purple-950/30 border border-gray-700/40 rounded-lg p-6 ${className}`}
@@ -61,26 +72,57 @@ export function MetaMaskConnection({
         <div className="text-center space-y-4">
           <Wallet className="h-12 w-12 mx-auto text-blue-400 opacity-80" />
           <div>
-            <h3 className="font-medium text-lg mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+            <h3
+              className="font-medium text-lg mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent"
+              style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: "14px",
+              }}
+            >
               Connect Your Wallet
             </h3>
-            <p className="text-sm text-gray-400 mb-6">
+            <p
+              className="text-sm text-gray-400 mb-6"
+              style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: "10px",
+              }}
+            >
               Connect your MetaMask wallet to start playing Lockblock.
             </p>
             <button
               onClick={handleConnectWallet}
               disabled={isConnecting}
               className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: "10px",
+                marginTop: "5vh",
+              }}
             >
               {isConnecting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Connecting...
+                  <span
+                    style={{
+                      fontFamily: "'Press Start 2P', monospace",
+                      fontSize: "10px",
+                    }}
+                  >
+                    Connecting...
+                  </span>
                 </>
               ) : (
                 <>
                   <Wallet className="h-4 w-4 mr-2" />
-                  Connect MetaMask
+                  <span
+                    style={{
+                      fontFamily: "'Press Start 2P', monospace",
+                      fontSize: "10px",
+                    }}
+                  >
+                    Connect MetaMask
+                  </span>
                 </>
               )}
             </button>
@@ -94,6 +136,7 @@ export function MetaMaskConnection({
     );
   }
 
+  console.log("[MetaMaskConnection] Wallet connected, showing connected UI");
   return (
     <div
       className={`bg-green-950/30 border border-green-700/40 rounded-lg p-6 ${className}`}
@@ -101,20 +144,27 @@ export function MetaMaskConnection({
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-2">
           <Wallet className="h-5 w-5 text-green-400" />
-          <span className="text-green-400 font-medium">Wallet Connected</span>
+          <span
+            className="text-green-400 font-medium"
+            style={{
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: "12px",
+            }}
+          >
+            Wallet Connected
+          </span>
         </div>
-        <p className="text-sm text-gray-400">
+        <p
+          className="text-sm text-gray-400"
+          style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: "10px",
+          }}
+        >
           {address
             ? `${address.slice(0, 6)}...${address.slice(-4)}`
             : "Connected"}
         </p>
-        <button
-          onClick={handleDisconnectWallet}
-          className="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 text-sm font-medium"
-        >
-          <LogOut className="h-4 w-4 mr-2" />
-          Disconnect Wallet
-        </button>
       </div>
     </div>
   );
